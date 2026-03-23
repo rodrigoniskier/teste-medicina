@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPD - Resolução de Questões</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --primary-blue: #2563eb;
+            --primary-purple: #7c3aed;
+            --success-green: #16a34a;
+            --error-red: #ef4444;
+            --border-light: #e5e7eb;
+            --hover-bg: #f3f4f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--bg-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .quiz-body {
+            padding: 32px;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: var(--bg-color);
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: left;
+            font-size: 1rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary-purple);
+            background: var(--hover-bg);
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .option-btn.correct {
+            border-color: var(--success-green);
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--success-green);
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            border-color: var(--error-red);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-red);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .controls {
+            margin-top: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .feedback-text {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .feedback-text.success { color: var(--success-green); }
+        .feedback-text.error { color: var(--error-red); }
+
+        .next-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: none;
+        }
+
+        .next-btn:hover {
+            background-color: #1d4ed8; /* Darker blue */
+        }
+
+        .score-container {
+            text-align: center;
+            display: none;
+        }
+
+        .score-container h2 {
+            color: var(--primary-blue);
+            margin-bottom: 16px;
+        }
+        
+        .restart-btn {
+            background-color: var(--primary-purple);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>MAPD - Mecanismos de Agressão, Patológicos e de Defesa</h1>
+        </header>
+        
+        <div class="quiz-body" id="quiz-body">
+            <div class="question-header">
+                <span id="question-tracker">Questão 1 de 3</span>
+            </div>
+            
+            <div class="question-text" id="question-text">
+                Carregando questão...
+            </div>
+
+            <div class="options-container" id="options-container">
+                </div>
+
+            <div class="controls">
+                <div id="feedback-message" class="feedback-text"></div>
+                <button id="next-btn" class="next-btn">Próxima Questão</button>
+            </div>
+        </div>
+
+        <div class="quiz-body score-container" id="score-container">
+            <h2>Avaliação Concluída</h2>
+            <p id="final-score-text">Você acertou X de Y questões.</p>
+            <button class="restart-btn" onclick="restartQuiz()">Reiniciar Simulação</button>
+        </div>
+    </div>
+
+    <script>
+        // Banco de dados de questões focado em rigor científico absoluto
+        const questions = [
+            {
+                question: "Na resposta imune humoral primária, qual é a principal imunoglobulina secretada inicialmente na circulação aguda?",
+                options: [
+                    "IgG",
+                    "IgA",
+                    "IgM",
+                    "IgE"
+                ],
+                correctAnswer: 2 // Índice do array (0-based)
+            },
+            {
+                question: "Qual característica morfológica e fisiológica diferencia fundamentalmente o processo de apoptose do processo de necrose celular?",
+                options: [
+                    "Tumefação celular severa e ruptura da membrana plasmática.",
+                    "Desencadeamento de um processo inflamatório agudo nos tecidos adjacentes.",
+                    "Condensação da cromatina e formação de corpos apoptóticos sem indução de inflamação periférica.",
+                    "Desnaturação proteica generalizada com preservação temporária do contorno celular (aspecto fantasmagórico)."
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "No contexto da biologia molecular, qual enzima é estritamente responsável pela síntese da nova fita de DNA durante o processo de replicação celular?",
+                options: [
+                    "RNA Polimerase II",
+                    "DNA Polimerase",
+                    "Helicase",
+                    "Transcriptase Reversa"
+                ],
+                correctAnswer: 1
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const questionTracker = document.getElementById('question-tracker');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const nextBtn = document.getElementById('next-btn');
+        const quizBody = document.getElementById('quiz-body');
+        const scoreContainer = document.getElementById('score-container');
+        const finalScoreText = document.getElementById('final-score-text');
+
+        function loadQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            questionTracker.innerText = `Questão ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionText.innerText = currentQuestion.question;
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.classList.add('option-btn');
+                button.addEventListener('click', () => selectOption(button, index));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.style.display = 'none';
+            feedbackMessage.innerText = '';
+            feedbackMessage.className = 'feedback-text';
+            while (optionsContainer.firstChild) {
+                optionsContainer.removeChild(optionsContainer.firstChild);
+            }
+        }
+
+        function selectOption(selectedButton, selectedIndex) {
+            const currentQuestion = questions[currentQuestionIndex];
+            const isCorrect = selectedIndex === currentQuestion.correctAnswer;
+            const allOptions = optionsContainer.children;
+
+            // Desabilita todos os botões após a escolha
+            for (let i = 0; i < allOptions.length; i++) {
+                allOptions[i].disabled = true;
+                if (i === currentQuestion.correctAnswer) {
+                    allOptions[i].classList.add('correct');
+                }
+            }
+
+            if (isCorrect) {
+                selectedButton.classList.add('correct');
+                feedbackMessage.innerText = 'Exato. O raciocínio clínico está correto.';
+                feedbackMessage.classList.add('success');
+                score++;
+            } else {
+                selectedButton.classList.add('wrong');
+                feedbackMessage.innerText = 'Incorreto. Revise este conceito.';
+                feedbackMessage.classList.add('error');
+            }
+
+            nextBtn.style.display = 'block';
+        }
+
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showScore();
+            }
+        });
+
+        function showScore() {
+            quizBody.style.display = 'none';
+            scoreContainer.style.display = 'block';
+            
+            const percentage = (score / questions.length) * 100;
+            let performanceFeedback = percentage === 100 ? "Excelente desempenho acadêmico." : "Necessário aprofundar a revisão teórica.";
+            
+            finalScoreText.innerHTML = `Acertos: <strong>${score}</strong> de <strong>${questions.length}</strong> (${percentage.toFixed(0)}%).<br><br>${performanceFeedback}`;
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreContainer.style.display = 'none';
+            quizBody.style.display = 'block';
+            loadQuestion();
+        }
+
+        // Inicia a aplicação
+        loadQuestion();
+    </script>
+</body>
+</html>
